@@ -11,6 +11,10 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+		"url": "https://github.com/bajcmartinez/jwt-vscode.git",
+		"type": "git"
+	},
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
