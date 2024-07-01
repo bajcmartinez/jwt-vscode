@@ -1,0 +1,42 @@
+name: Publish VS Code Extension
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers the workflow on tags starting with 'v'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Compile TypeScript
+      run: npm run compile
+
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+
+    - name: Publish extension
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }} # Personal Access Token for publishing
+      run: vsce publish
+
+    - name: Create release on GitHub
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        files: |
+          **/*.vsix
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
