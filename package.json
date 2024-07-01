@@ -3,6 +3,8 @@
   "displayName": "jwt-vscode",
   "description": "A VS Code extension for decoding JSON Web Tokens",
   "version": "0.1.0",
+  "icon": "images/icon.png",
+  "publisher": "bajcmartinez",
   "engines": {
     "vscode": "^1.54.0"
   },
