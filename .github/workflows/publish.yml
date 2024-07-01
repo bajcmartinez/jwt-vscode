@@ -1,9 +1,8 @@
 name: Publish VS Code Extension
 
 on:
-  push:
-    tags:
-      - 'v*' # Triggers the workflow on tags starting with 'v'
+  release:
+    types: [published]
 
 jobs:
   build-and-publish:
@@ -31,12 +30,3 @@ jobs:
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }} # Personal Access Token for publishing
       run: vsce publish
-
-    - name: Create release on GitHub
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref }}
-        files: |
-          **/*.vsix
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
