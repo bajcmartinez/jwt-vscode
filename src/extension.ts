@@ -1,53 +1,58 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
-import { decodeJWT } from './jwt';
+import * as vscode from "vscode";
+import { decodeJWT } from "./jwt";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  const JWT_DECODE_SCHEME = "jwt-vscode";
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "jwt-vscode" is now active!');
+  const jwtDecodeFileProvider = new (class
+    implements vscode.TextDocumentContentProvider
+  {
+    // emitter and its event
+    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+    onDidChange = this.onDidChangeEmitter.event;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('jwt-vscode.decodeJWT', async () => {
-		const clipboardContent = await vscode.env.clipboard.readText();
-		
-		const input = await vscode.window.showInputBox({
-			prompt: 'Enter your encoded JWT',
-			value: clipboardContent || ''
-		});
+    provideTextDocumentContent(uri: vscode.Uri): string {
+      // Load the editor preferences
+      const editorConfig = vscode.workspace.getConfiguration("editor");
+      const indent = editorConfig.get<number>("tabSize", 2);
 
-		if (input === undefined) {
-			return; // User canceled the input box
-		}
-		
-		// Decode the user input into the JWT parts
-		const decodedJWT = decodeJWT(input);
+      // Decode the user input into the JWT parts
+      const decodedJWT = decodeJWT(uri.path.slice(0, uri.path.length - 13));
 
-		// Load the editor preferences
-		const editorConfig = vscode.workspace.getConfiguration('editor');
-    	const indent = editorConfig.get<number>('tabSize', 2);
+      return JSON.stringify(decodedJWT, null, indent);
+    }
+  })();
 
-		const newFile = vscode.Uri.parse('untitled:' + 'decoded.json');
-		vscode.workspace.openTextDocument(newFile).then(document => {
-		const edit = new vscode.WorkspaceEdit();
-		edit.insert(newFile, new vscode.Position(0, 0), JSON.stringify(decodedJWT, null, indent));
-		return vscode.workspace.applyEdit(edit).then(success => {
-			if (success) {
-			vscode.window.showTextDocument(document);
-			} else {
-			vscode.window.showInformationMessage('Could not open file!');
-			}
-		});
-		});
-	});
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      JWT_DECODE_SCHEME,
+      jwtDecodeFileProvider
+    )
+  );
 
-	context.subscriptions.push(disposable);
+  const disposable = vscode.commands.registerCommand(
+    "jwt-vscode.decodeJWT",
+    async () => {
+      const clipboardContent = await vscode.env.clipboard.readText();
+
+      const input = await vscode.window.showInputBox({
+        prompt: "Enter your encoded JWT",
+        value: clipboardContent || "",
+      });
+
+      if (input === undefined) {
+        return; // User canceled the input box
+      }
+
+      const newFile = vscode.Uri.parse(
+        `${JWT_DECODE_SCHEME}:${input}/decoded.json`
+      );
+      await vscode.workspace.openTextDocument(newFile);
+      await vscode.window.showTextDocument(newFile);
+    }
+  );
+
+  context.subscriptions.push(disposable);
 }
 
 // This method is called when your extension is deactivated
